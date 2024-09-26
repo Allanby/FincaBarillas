@@ -13,6 +13,6 @@ class producto(models.Model):
 
 
     def __str__(self):
-        return self.codigoCultivo
+        return f'{self.codigoCultivo}-{self.nombre}'
 
 # Create your models here.

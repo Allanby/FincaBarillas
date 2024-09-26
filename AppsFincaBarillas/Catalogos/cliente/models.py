@@ -9,5 +9,5 @@ class Cliente(models.Model):  # Nombres de clases en PascalCase
     estado = models.SmallIntegerField()
 
     def __str__(self):
-        return self.codigo  # Devuelve el nombre del cliente para las representaciones
+        return f'{self.codigo}-{self.nombres  }-{self.apellidos}'# Devuelve el nombre del cliente para las representaciones
 

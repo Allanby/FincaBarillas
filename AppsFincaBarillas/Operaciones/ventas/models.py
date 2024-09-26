@@ -3,7 +3,7 @@ from AppsFincaBarillas.Catalogos.cliente.models import Cliente  # Importa el mod
 
 class Venta(models.Model):
     id_venta = models.AutoField(primary_key=True)  # ID autogenerado
-    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)  # Relación con la tabla Cliente
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, verbose_name="Nombre del Cliente")  # Relación con la tabla Cliente
     numero_venta = models.CharField(max_length=10, unique=True)  # Número único de venta
     metodo_pago = models.CharField(max_length=50)
     fecha_venta = models.DateTimeField(auto_now_add=True)
