@@ -9,3 +9,7 @@ class Pedidos(models.Model):
 
     def __str__(self):
         return str(self.id_pedido)  # Usar str() para evitar error de retorno no string
+
+
+def pedidos():
+    return None

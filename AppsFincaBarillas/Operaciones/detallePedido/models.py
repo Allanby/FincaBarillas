@@ -10,3 +10,7 @@ class DetallePedido(models.Model):
 
     def __str__(self):
         return str(self.id_detalle_pedido)
+
+
+def detallePedido():
+    return None

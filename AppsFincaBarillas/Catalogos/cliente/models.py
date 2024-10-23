@@ -11,3 +11,6 @@ class Cliente(models.Model):  # Nombres de clases en PascalCase
     def __str__(self):
         return f'{self.codigo}-{self.nombres  }-{self.apellidos}'# Devuelve el nombre del cliente para las representaciones
 
+#
+# def cliente():
+#     return None

@@ -12,3 +12,7 @@ class Producciones(models.Model):
 
     def __str__(self):
         return self.codigo_produccion
+
+
+def producciones():
+    return None

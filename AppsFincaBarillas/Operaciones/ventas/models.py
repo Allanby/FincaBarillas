@@ -13,5 +13,5 @@ class Venta(models.Model):
         return self.numero_venta  # Corrige el método __str__
 
 
-
-
+def ventas():
+    return None
