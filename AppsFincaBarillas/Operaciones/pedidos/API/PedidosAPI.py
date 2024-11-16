@@ -12,7 +12,7 @@ from AppsFincaBarillas.Operaciones.pedidos.API.Permission import IsAdminOrReadOn
 #AllowAny: para indicar que es un endpoit libre sin aunteticacion
 
 from AppsFincaBarillas.Operaciones.pedidos.API.Serializer import PedidosSerializer
-from AppsFincaBarillas.Operaciones.pedidos.models import Pedidos
+from AppsFincaBarillas.Operaciones.pedidos.models import Pedidos, pedidos
 from AppsFincaBarillas.Operaciones.pedidos.API.Permission import IsAdminOrReadOnly
 
 class PedidosViewSet(ViewSet):
@@ -36,6 +36,20 @@ class PedidosViewSet(ViewSet):
         serializer.save()
         return Response(status=status.HTTP_200_OK, data=serializer.data)
 
+    def update(self, request, pk: int):
+        pedidos = Pedidos.objects.get(pk=pk)
+        serializer = PedidosSerializer(instance=pedidos, data=request.data)
+        serializer.is_valid(raise_exception= True)
+        serializer.save()
+        return Response(status=status.HTTP_200_OK, data= serializer.data)
+
+
+    def delete(self, request, pk: int):
+        pedidos = Pedidos.objects.get(pk=pk)
+        serializer = PedidosSerializer(pedidos)
+        pedidos.delete()
+        return Response(status= status.HTTP_204_NO_CONTENT)
+
 
     #Cambiar estado del pedido a "cancelado"
 
@@ -58,6 +72,35 @@ class PedidosViewSet(ViewSet):
         data = {'mensaje': 'Pedidos realizados en noviembre', 'resultado': serializer.data}
 
         return Response(status=status.HTTP_200_OK, data=data)
+
+    #Listar Pedidos de un Cliente Específico
+
+    @action(methods=['get'], detail=False)
+    def ListarPedidosPorCliente(self, request):
+        cliente_id = request.query_params.get('ClienteId')
+        pedidos = Pedidos().objects.filter(ClienteId=cliente_id)
+        serializer = PedidosSerializer(pedidos, many=True)
+        return Response(status=status.HTTP_200_OK, data={'resultado': serializer.data})
+
+    #Obtener todos los pedidos pendientes:
+    @action(methods=['get'], detail=False)
+    def PedidosPendientes(self, request):
+        pedidos_pendientes = pedidos().objects.filter(Estado='Pendiente')
+        serializer = PedidosSerializer(pedidos_pendientes, many=True)
+        return Response(status=status.HTTP_200_OK, data={'resultado': serializer.data})
+
+    # Reporte de pedidos por cliente:
+    @action(methods=['get'], detail=False)
+    def ReportePedidosPorCliente(self, request):
+        cliente_id = request.query_params.get('cliente_id')
+        pedidos = Pedidos.objects.filter(ClienteId=cliente_id)
+        serializer = PedidosSerializer(pedidos, many=True)
+        return Response(status=status.HTTP_200_OK, data={'reporte': serializer.data})
+
+
+
+
+
 
 
 

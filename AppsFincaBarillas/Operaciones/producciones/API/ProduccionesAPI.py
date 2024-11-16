@@ -36,18 +36,56 @@ class ProduccionesViewSet(ViewSet):
         serializer.save()
         return Response(status=status.HTTP_200_OK, data=serializer.data)
 
+    def update(self, request, pk: int):
+        producciones = Producciones.objects.get(pk=pk)
+        serializer = ProduccionesSerializer(instance=producciones, data=request.data)
+        serializer.is_valid(raise_exception= True)
+        serializer.save()
+        return Response(status=status.HTTP_200_OK, data= serializer.data)
 
-    #Registrar una producción con calidad "excelente"
 
-    @action(methods=['post'], detail=False)
-    def RegistrarProduccionExcelente(self, request):
-        data_produccion = request.data
-        data_produccion['CalidadCosecha'] = 'Excelente'
-        serializer = ProduccionesSerializer(data=data_produccion)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(status=status.HTTP_200_OK, data={'mensaje': 'Producción registrada con calidad excelente'})
-        return Response(status=status.HTTP_400_BAD_REQUEST, data={'mensaje': 'Datos inválidos'})
+    def delete(self, request, pk: int):
+        producciones = Producciones.objects.get(pk=pk)
+        serializer = ProduccionesSerializer(producciones)
+        producciones.delete()
+        return Response(status= status.HTTP_204_NO_CONTENT)
+
+    #Filtrar Producciones por Fecha de Producción
+    @action(methods=['get'], detail=False)
+    def FiltrarProduccionesPorFecha(self, request):
+        fecha_inicio = request.query_params.get('FechaInicio')
+        fecha_fin = request.query_params.get('FechaFin')
+
+        if not fecha_inicio or not fecha_fin:
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+            data={'mensaje': 'FechaInicio y FechaFin son requeridos'})
+
+        producciones = Producciones.objects.filter(FechaProduccion__range=[fecha_inicio, fecha_fin])
+        serializer = ProduccionesSerializer(producciones, many=True)
+        return Response(status=status.HTTP_200_OK, data={'resultado': serializer.data})
+
+    #Obtener la producción más reciente:
+    @action(methods=['get'], detail=False)
+    def ProduccionMasReciente(self, request):
+        produccion = Producciones.objects.latest('FechaProduccion')
+        serializer = ProduccionesSerializer(produccion)
+        return Response(status=status.HTTP_200_OK, data={'resultado': serializer.data})
+
+    #Reporte de producciones por fecha:
+    @action(methods=['get'], detail=False)
+    def ReporteProduccionesPorFecha(self, request):
+        fecha_inicio = request.query_params.get('fecha_inicio')
+        fecha_fin = request.query_params.get('fecha_fin')
+        producciones = Producciones.objects.filter(FechaProduccion__range=[fecha_inicio, fecha_fin])
+        serializer = ProduccionesSerializer(producciones, many=True)
+        return Response(status=status.HTTP_200_OK, data={'reporte': serializer.data})
+
+
+
+
+
+
+
 
 
 

@@ -1,3 +1,4 @@
+from django.db.models import Count
 from rest_framework import status
 from rest_framework.decorators import action, permission_classes
 from rest_framework.response import Response
@@ -38,63 +39,43 @@ class ClienteViewSet(ViewSet):
         serializer.save()
         return Response(status=status.HTTP_200_OK, data=serializer.data)\
 
-    #los del profe
+    def update(self, request, pk: int):
+        cliente = Cliente.objects.get(pk=pk)
+        serializer = ClienteSerializer(instance=cliente, data=request.data)
+        serializer.is_valid(raise_exception= True)
+        serializer.save()
+        return Response(status=status.HTTP_200_OK, data= serializer.data)
 
-    @action(methods=['get'], detail=False)
-    def GetClienteByCodigo(self, request):
-        codigo = request.GET.get("codigo")
-        data = {'mensaje': f'Hola oliver{codigo}'}
-        return Response(status=status.HTTP_200_OK, data=data)
 
+    def delete(self, request, pk: int):
+        cliente = Cliente.objects.get(pk=pk)
+        serializer = ClienteSerializer(cliente)
+        cliente.delete()
+        return Response(status= status.HTTP_204_NO_CONTENT)
+
+    #LOS MIOS allan
+
+    # Actualizar nombre de cliente por código
     @action(methods=['post'], detail=False)
-    def GetClienteByCodigoDescripcion(self, request):
-        permission_classes=[AllowAny]
-        # Capturar los datos del cuerpo del POST usando request.data
-        codigo = request.data.get('Codigo')
-        descripcion = request.data.get('Descripcion')
-
-        # Crear una respuesta con los datos capturados
-        data = {'mensaje': f'{codigo} - {descripcion}'}
-        return Response(status=status.HTTP_200_OK, data=data)
-
-    #LOS MIOS
-
-    #Registrar clientes en modo inactivo
-    @action(methods=['post'], detail=False)
-    def RegistrarClientesInactivos(self, request):
-        data_cliente = request.data
-        data_cliente['Estado'] = 'Inactivo'
-        serializer = ClienteSerializer(data=data_cliente)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(status=status.HTTP_200_OK, data={'mensaje': 'Cliente registrado como inactivo'})
-        return Response(status=status.HTTP_400_BAD_REQUEST, data={'mensaje': 'Datos inválidos'})
-
-
-
-    #Actualizar direccion de cliente por codigo
-    @action(methods=['post'], detail=False)
-    def ActualizarDireccionPorCodigo(self, request):
+    def ActualizarNombrePorCodigo(self, request):
         codigo = request.data.get('codigo')
-        nueva_direccion = request.data.get('Direccion')
-        Cliente = Cliente.objects.filter(codigo=codigo).first()
-        if Cliente:
-            Cliente.Direccion = nueva_direccion
-            Cliente.save()
-            return Response(status=status.HTTP_200_OK, data={'mensaje': 'Dirección actualizada'})
+        nuevo_nombre = request.data.get('Nombre')
+        cliente = Cliente.objects.filter(codigo=codigo).first()
+        if cliente:
+            cliente.Nombre = nuevo_nombre
+            cliente.save()
+            return Response(status=status.HTTP_200_OK, data={'mensaje': 'Nombre actualizado'})
         return Response(status=status.HTTP_400_BAD_REQUEST, data={'mensaje': 'Cliente no encontrado'})
 
-
-    #Filtrar clientes por dirección que inicie con M, G o R
-
+    # Filtrar clientes por apellido que inicie con M, G o R
     @action(methods=['post'], detail=False)
-    def FiltrarDireccion(self, request):
+    def FiltrarApellido(self, request):
         letra_inicial = request.data.get("letra_inicial")
 
         if letra_inicial not in ["M", "G", "R"]:
             data = {'mensaje': 'La letra inicial debe ser M, G o R.'}
         else:
-            clientes = Cliente().objects.filter(Direccion__startswith=letra_inicial)
+            clientes = Cliente.objects.filter(Apellido__startswith=letra_inicial)
             serializer = ClienteSerializer(clientes, many=True)
             data = {'mensaje': 'Clientes filtrados', 'resultado': serializer.data}
 
@@ -114,8 +95,27 @@ class ClienteViewSet(ViewSet):
 
         return Response(status=status.HTTP_200_OK, data=data)
 
+    #Buscar Cliente por Teléfono
+    @action(methods=['get'], detail=False)
+    def BuscarPorTelefono(self, request):
+        telefono = request.query_params.get('telefono', '')
+        cliente = Cliente.objects.filter(Telefono__iexact=telefono).first()
+        if cliente:
+            serializer = ClienteSerializer(cliente)
+            data = {'mensaje': 'Cliente encontrado', 'resultado': serializer.data}
+        else:
+            data = {'mensaje': 'Cliente no encontrado'}
+        return Response(status=status.HTTP_200_OK, data=data)
 
+    #Reporte de Clientes por Estado
+    @action(methods=['get'], detail=False)
+    def ReporteClientesPorEstado(self, request):
+        clientes_por_estado = Cliente.objects.values('Estado').annotate(
+            total_clientes=Count('IdCliente')
+        ).order_by('Estado')
 
+        data = [{'estado': c['Estado'], 'total_clientes': c['total_clientes']} for c in clientes_por_estado]
+        return Response(status=status.HTTP_200_OK, data={'reporte': data})
 
 
 

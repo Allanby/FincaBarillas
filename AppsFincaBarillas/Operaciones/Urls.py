@@ -16,7 +16,7 @@ routerOperaciones.register(prefix= 'detallePedido', basename='detallePedido', vi
 routerOperaciones.register(prefix= 'detalleVenta', basename='detalleVenta', viewset=DetalleVentaViewSet)
 routerOperaciones.register(prefix= 'pedidos', basename='pedidos', viewset=PedidosViewSet)
 routerOperaciones.register(prefix= 'producciones', basename='producciones', viewset=ProduccionesViewSet)
-routerOperaciones.register(prefix= 'ventas', basename='ventas', viewset=VentaViewSet)
+routerOperaciones.register(prefix= 'ventas', basename='ventas', viewset=VentaViewSet) 
 
 
 

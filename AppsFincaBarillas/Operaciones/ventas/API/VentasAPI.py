@@ -1,3 +1,4 @@
+from django.db.models.functions import TruncMonth
 from rest_framework import status
 from rest_framework.decorators import action, permission_classes
 from rest_framework.response import Response
@@ -36,21 +37,31 @@ class VentaViewSet(ViewSet):
         serializer.save()
         return Response(status=status.HTTP_200_OK, data=serializer.data)
 
-    #Actualizar el monto total de una venta existente:
+    def update(self, request, pk: int):
+        ventas = Venta.objects.get(pk=pk)
+        serializer = VentaSerializer(instance=ventas, data=request.data)
+        serializer.is_valid(raise_exception= True)
+        serializer.save()
+        return Response(status=status.HTTP_200_OK, data= serializer.data)
 
-    @action(methods=['post'], detail=False)
-    def ActualizarMontoVenta(self, request):
-        id_venta = request.data.get('id venta')
-        nuevo_monto = request.data.get('monto total')
-        venta = Venta.objects.filter(id_venta=id_venta).first()
-        if venta:
-            venta.monto_total = nuevo_monto
-            venta.save()
-            return Response(status=status.HTTP_200_OK, data={'mensaje': 'Monto actualizado'})
-        return Response(status=status.HTTP_400_BAD_REQUEST, data={'mensaje': 'Venta no encontrada'})
 
-    #Filtrar ventas con método de pago en efectivo y monto mayor a 30,000 córdobas
+    def delete(self, request, pk: int):
+        ventas = Venta.objects.get(pk=pk)
+        serializer = VentaSerializer(ventas)
+        ventas.delete()
+        return Response(status= status.HTTP_204_NO_CONTENT)
 
+
+    #Buscar ventas por método de pago:
+
+    @action(methods=['get'], detail=False)
+    def BuscarPorMetodoPago(self, request):
+        metodo_pago = request.query_params.get('metodo')
+        ventas = Venta.objects.filter(metodoPago__icontains=metodo_pago)
+        serializer = VentaSerializer(ventas, many=True)
+        return Response(status=status.HTTP_200_OK, data={'resultado': serializer.data})
+
+    #Filtrar ventas con metodo de pago en efectivo y monto mayor a 30, 000 cordobas
     @action(methods=['post'], detail=False)
     def FiltrarVentasEfectivo(self, request):
         ventas = Venta.objects.filter(MetodoPago='Efectivo', Monto__gt=30000)
@@ -58,6 +69,23 @@ class VentaViewSet(ViewSet):
         data = {'mensaje': 'Ventas en efectivo con monto superior a 30,000', 'resultado': serializer.data}
 
         return Response(status=status.HTTP_200_OK, data=data)
+
+    #Reporte de ventas por mes:
+    @action(methods=['get'], detail=False)
+    def ReporteVentasPorMes(self, request):
+        ventas_mes = Venta.objects.annotate(mes=TruncMonth('fechaventa')).values('mes').annotate(
+            total=sum('monto total')).order_by('mes')
+        return Response(status=status.HTTP_200_OK, data={'reporte': ventas_mes})
+
+    # Reporte de ventas por método de pago:
+    @action(methods=['get'], detail=False)
+    def ReporteVentasPorMetodoPago(self, request):
+        ventas_metodo = Venta.objects.values('metodoPago').annotate(total_ventas=sum('monto total'))
+        return Response(status=status.HTTP_200_OK, data={'reporte': ventas_metodo})
+
+
+
+
 
 
 

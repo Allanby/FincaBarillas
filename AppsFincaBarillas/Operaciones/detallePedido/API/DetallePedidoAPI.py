@@ -36,6 +36,20 @@ class DetallePedidoViewSet(ViewSet):
         serializer.save()
         return Response(status=status.HTTP_200_OK, data=serializer.data)
 
+    def update(self, request, pk: int):
+        detallePedido = DetallePedido.objects.get(pk=pk)
+        serializer = DetallePedido(instance=detallePedido, data=request.data)
+        serializer.is_valid(raise_exception= True)
+        serializer.save()
+        return Response(status=status.HTTP_200_OK, data= serializer.data)
+
+
+    def delete(self, request, pk: int):
+        detallePedido = DetallePedido.objects.get(pk=pk)
+        serializer = DetallePedidoSerializer(detallePedido)
+        detallePedido.delete()
+        return Response(status= status.HTTP_204_NO_CONTENT)
+
     #Actualizar la cantidad de productos en un detalle de pedido
 
     @action(methods=['post'], detail=False)
@@ -49,6 +63,16 @@ class DetallePedidoViewSet(ViewSet):
             detalle_pedido.save()
             return Response(status=status.HTTP_200_OK, data={'mensaje': 'Cantidad actualizada'})
         return Response(status=status.HTTP_400_BAD_REQUEST, data={'mensaje': 'Detalle de pedido no encontrado'})
+
+    #Obtener total de productos vendidos en un pedido específico:
+
+    @action(methods=['get'], detail=True)
+    def TotalProductosVendidos(self, request, pk=None):
+        detalles = DetallePedido.objects.filter(PedidoId=pk)
+        total = detalles.aggregate(sum('Cantidad'))['Cantidad__sum']
+        return Response(status=status.HTTP_200_OK, data={'total_productos': total})
+
+
 
 
 

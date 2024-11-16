@@ -36,9 +36,22 @@ class ProductoViewSet(ViewSet):
         serializer.save()
         return Response(status=status.HTTP_200_OK, data=serializer.data)
 
+    def update(self, request, pk: int):
+        Producto = producto.objects.get(pk=pk)
+        serializer = ProductoSerializer (instance=Producto, data=request.data)
+        serializer.is_valid(raise_exception= True)
+        serializer.save()
+        return Response(status=status.HTTP_200_OK, data= serializer.data)
+
+
+    def delete(self, request, pk: int):
+        Producto = producto.objects.get(pk=pk)
+        serializer = ProductoSerializer(Producto)
+        Producto.delete()
+        return Response(status= status.HTTP_204_NO_CONTENT)
+
 
     #Cambiar estado del producto a "descontinuado:
-
 
     @action(methods=['post'], detail=False)
     def CambiarEstadoProducto(self, request):
@@ -64,21 +77,16 @@ class ProductoViewSet(ViewSet):
 
         return Response(status=status.HTTP_200_OK, data=data)
 
-    #Actualizar el precio de un producto según su ID
-    @action(methods=['post'], detail=False)
-    def ActualizarPrecioProducto(self, request):
-        producto_id = request.data.get("id")
-        nuevo_precio = request.data.get("precio")
 
-        try:
-            productos = producto.objects.get(id=producto_id)
-            productos.Precio = nuevo_precio
-            productos.save()
-            data = {'mensaje': f'Precio actualizado para el producto {producto.nombre}'}
-        except producto.DoesNotExist:
-            data = {'mensaje': 'Producto no encontrado'}
 
-        return Response(status=status.HTTP_200_OK, data=data)
+        #Reporte de Productos Disponibles
+
+    @action(methods=['get'], detail=False)
+    def ReporteProductosDisponibles(self, request):
+        productos_disponibles = producto.objects.filter(estado='disponible').count()
+
+        data = {'productos_disponibles': productos_disponibles}
+        return Response(status=status.HTTP_200_OK, data={'reporte': data})
 
 
 
