@@ -63,25 +63,6 @@ class TipoProductoViewSet(ViewSet):
 
         return Response(status=status.HTTP_200_OK, data=data)
 
-        # Actualizar la calidad de un tipo de producto
-
-    @action(methods=['post'], detail=False)
-    def ActualizarCalidad(self, request):
-        id_tipo = request.data.get('IdTipo')
-        nueva_calidad = request.data.get('calidad')
-
-        # Verifica que se haya proporcionado el IdTipo y la nueva calidad
-        if not id_tipo or not nueva_calidad:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={'mensaje': 'IdTipo y calidad son requeridos'})
-
-        # Busca el tipo de producto por su IdTipo
-        tipo_producto = TipoProducto.objects.filter(IdTipo=id_tipo).first()
-        if tipo_producto:
-            tipo_producto.Descripcion = nueva_calidad  # el campo de calidad se almacena en "Descripcion"
-            tipo_producto.save()
-            return Response(status=status.HTTP_200_OK, data={'mensaje': 'Calidad actualizada'})
-
-        return Response(status=status.HTTP_404_NOT_FOUND, data={'mensaje': 'Tipo de producto no encontrado'})
 
     #Listar Tipos de Producto por Popularidad:
     @action(methods=['get'], detail=False)
@@ -97,7 +78,7 @@ class TipoProductoViewSet(ViewSet):
             cantidad_productos=Count('IdTipo')
         ).order_by('-cantidad_productos')
 
-        data = [{'tipo_producto': t['Descripcion'], 'cantidad_productos': t['cantidad_productos']} for t in
+        data = [{'tipo_producto': t['description'], 'cantidad_productos': t['cantidad_productos']} for t in
                 tipos_producto_cantidad]
         return Response(status=status.HTTP_200_OK, data={'reporte': data})
 

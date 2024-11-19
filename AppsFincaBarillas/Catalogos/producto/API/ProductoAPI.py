@@ -83,7 +83,7 @@ class ProductoViewSet(ViewSet):
 
     @action(methods=['get'], detail=False)
     def ReporteProductosDisponibles(self, request):
-        productos_disponibles = producto.objects.filter(estado='disponible').count()
+        productos_disponibles = producto.objects.filter(estado='DISPONIBLE').count()
 
         data = {'productos_disponibles': productos_disponibles}
         return Response(status=status.HTTP_200_OK, data={'reporte': data})

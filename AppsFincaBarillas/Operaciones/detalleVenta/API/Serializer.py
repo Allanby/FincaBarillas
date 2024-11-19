@@ -4,5 +4,5 @@ from AppsFincaBarillas.Operaciones.detalleVenta.models import DetalleVenta
 class DetalleVentaSerializer(ModelSerializer):
     class Meta:
         model = DetalleVenta
-        fields = ['VentaId','ProductoId','Descripcion', 'Precio_Producto', 'Cantidad_Producto']
+        fields = ['Id_DetalleVenta','venta','producto', 'descripcion', 'precio_producto', 'cantidad_producto']
         # fields = '__all__'

@@ -1,6 +1,7 @@
 from django.db import models
 
 class Cliente(models.Model):  # Nombres de clases en PascalCase
+    id = models.AutoField(primary_key=True)
     codigo = models.CharField(max_length=6)  # Código único del cliente
     nombres = models.CharField(max_length=32)
     apellidos = models.CharField(max_length=50)

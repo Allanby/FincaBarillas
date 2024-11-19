@@ -8,7 +8,7 @@ class Pedidos(models.Model):
     estado = models.CharField(max_length=32)
 
     def __str__(self):
-        return str(self.id_pedido)  # Usar str() para evitar error de retorno no string
+        return str(self.estado)  # Usar str() para evitar error de retorno no string
 
 
 def pedidos():

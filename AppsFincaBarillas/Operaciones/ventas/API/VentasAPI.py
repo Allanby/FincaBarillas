@@ -61,26 +61,57 @@ class VentaViewSet(ViewSet):
         serializer = VentaSerializer(ventas, many=True)
         return Response(status=status.HTTP_200_OK, data={'resultado': serializer.data})
 
-    #Filtrar ventas con metodo de pago en efectivo y monto mayor a 30, 000 cordobas
-    @action(methods=['post'], detail=False)
+    @action(methods=['POST'], detail=False)
     def FiltrarVentasEfectivo(self, request):
-        ventas = Venta.objects.filter(MetodoPago='Efectivo', Monto__gt=30000)
-        serializer = VentaSerializer(ventas, many=True)
-        data = {'mensaje': 'Ventas en efectivo con monto superior a 30,000', 'resultado': serializer.data}
+        try:
+            # Obtener el parámetro 'metodo_pago' de la solicitud, con un valor por defecto de 'Efectivo'
+            metodo_pago = request.data.get('metodo_pago', 'Efectivo')  # 'Efectivo' por defecto
+            monto_total = request.data.get('monto_total', 30000)  # 30,000 como valor por defecto
 
-        return Response(status=status.HTTP_200_OK, data=data)
+            # Filtrar ventas con los parámetros proporcionados
+            ventas = Venta.objects.filter(metodo_pago=metodo_pago, monto_total__gt=monto_total)
+
+            # Si no se encuentran ventas, devolver un mensaje adecuado
+            if not ventas.exists():
+                return Response(
+                    {'mensaje': 'No se encontraron ventas con el criterio especificado.'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            # Serializar los datos de las ventas
+            serializer = VentaSerializer(ventas, many=True)
+            data = {
+                'mensaje': f'Ventas con método de pago {metodo_pago} y monto superior a {monto_total}',
+                'resultado': serializer.data
+            }
+
+            # Devolver los resultados con código 200
+            return Response(data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response(
+                {'mensaje': 'Ocurrió un error inesperado', 'detalle': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        except Exception as e:
+            # Si ocurre un error inesperado, lo manejamos aquí
+            return Response(
+                {'mensaje': 'Ocurrió un error inesperado', 'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     #Reporte de ventas por mes:
-    @action(methods=['get'], detail=False)
+    @action(methods=['GET'], detail=False)
     def ReporteVentasPorMes(self, request):
-        ventas_mes = Venta.objects.annotate(mes=TruncMonth('fechaventa')).values('mes').annotate(
+        ventas_mes = Venta.objects.annotate(mes=TruncMonth('fecha_venta')).values('mes').annotate(
             total=sum('monto total')).order_by('mes')
         return Response(status=status.HTTP_200_OK, data={'reporte': ventas_mes})
 
     # Reporte de ventas por método de pago:
-    @action(methods=['get'], detail=False)
+    @action(methods=['GET'], detail=False)
     def ReporteVentasPorMetodoPago(self, request):
-        ventas_metodo = Venta.objects.values('metodoPago').annotate(total_ventas=sum('monto total'))
+        ventas_metodo = Venta.objects.values('metodo_pago').annotate(total_ventas=sum('monto_total'))
         return Response(status=status.HTTP_200_OK, data={'reporte': ventas_metodo})
 
 

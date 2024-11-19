@@ -1,24 +1,46 @@
 from rest_framework import status
 from rest_framework.decorators import action, permission_classes
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, IsAuthenticatedOrReadOnly, AllowAny
-from AppsFincaBarillas.Operaciones.pedidos.API.Permission import IsAdminOrReadOnly
-#IsAuthenticated: solo usuarios logeados en el panel adminitrativo
-#IsAdminUser: solo los usuarios administradores podran acceder
-#IsAuthenticatedOrReadOnly: solo los usuarios autenticado podran hacer CDU el resto solo lectura
-#Existen otros y crear nuestros propios permisos
-#AllowAny: para indicar que es un endpoit libre sin aunteticacion
 
 from AppsFincaBarillas.Operaciones.pedidos.API.Serializer import PedidosSerializer
 from AppsFincaBarillas.Operaciones.pedidos.models import Pedidos, pedidos
-from AppsFincaBarillas.Operaciones.pedidos.API.Permission import IsAdminOrReadOnly
 
 class PedidosViewSet(ViewSet):
     permission_classes = [IsAuthenticated] #[IsAdminOrReadOnly]
     queryset = Pedidos.objects.all()
     serializer = PedidosSerializer
+
+    @action(methods=['get'], detail=False)
+    def PedidosPendientes(self, request):
+        try:
+
+            # Filtrar los pedidos pendientes usando el campo 'estado'
+            pedidos_pendientes = Pedidos.objects.filter(estado='Pendiente')
+
+            # Si no se encuentran pedidos pendientes, devolver error
+            if not pedidos_pendientes.exists():
+                return Response(
+                    status=status.HTTP_404_NOT_FOUND,
+                    data={'error': 'No se encontraron pedidos pendientes'}
+                )
+
+            # Serializar los pedidos
+            serializer = PedidosSerializer(pedidos_pendientes, many=True)
+
+
+            # Retornar la respuesta con los datos serializados
+            return Response(status=status.HTTP_200_OK, data={'PEDIDOS PENDIENTES': serializer.data})
+
+        except Exception as e:
+            # Manejar cualquier otro error inesperado
+            return Response(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                data={'error': 'Ocurrió un error inesperado.', 'detalle': str(e)}
+            )
 
     def list(self, request):
         data = request
@@ -56,7 +78,7 @@ class PedidosViewSet(ViewSet):
     @action(methods=['post'], detail=False)
     def CancelarPedido(self, request):
         id_pedido = request.data.get('idPedido')
-        pedido = Pedidos.objects.filter(idPedido=id_pedido).first()
+        pedido = Pedidos.objects.filter(id_pedido=id_pedido).first()
         if pedido:
             pedido.Estado = 'Cancelado'
             pedido.save()
@@ -67,7 +89,7 @@ class PedidosViewSet(ViewSet):
 
     @action(methods=['post'], detail=False)
     def FiltrarPedidosNoviembre(self, request):
-        pedido = Pedidos.objects.filter(Fecha__month=11)
+        pedido = Pedidos.objects.filter(fecha_pedido=11)
         serializer = PedidosSerializer(pedido, many=True)
         data = {'mensaje': 'Pedidos realizados en noviembre', 'resultado': serializer.data}
 
@@ -78,16 +100,10 @@ class PedidosViewSet(ViewSet):
     @action(methods=['get'], detail=False)
     def ListarPedidosPorCliente(self, request):
         cliente_id = request.query_params.get('ClienteId')
-        pedidos = Pedidos().objects.filter(ClienteId=cliente_id)
+        pedidos = Pedidos().objects.filter(cliente=cliente_id)
         serializer = PedidosSerializer(pedidos, many=True)
         return Response(status=status.HTTP_200_OK, data={'resultado': serializer.data})
 
-    #Obtener todos los pedidos pendientes:
-    @action(methods=['get'], detail=False)
-    def PedidosPendientes(self, request):
-        pedidos_pendientes = pedidos().objects.filter(Estado='Pendiente')
-        serializer = PedidosSerializer(pedidos_pendientes, many=True)
-        return Response(status=status.HTTP_200_OK, data={'resultado': serializer.data})
 
     # Reporte de pedidos por cliente:
     @action(methods=['get'], detail=False)

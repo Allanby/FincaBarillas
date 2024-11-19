@@ -57,7 +57,7 @@ class DetallePedidoViewSet(ViewSet):
         pedido_id = request.data.get('PedidoId')
         producto_id = request.data.get('ProductoID')
         nueva_cantidad = request.data.get('Cantidad')
-        detalle_pedido = DetallePedido.objects.filter(PedidoId=pedido_id, ProductoID=producto_id).first()
+        detalle_pedido = DetallePedido.objects.filter(pedido=pedido_id, producto=producto_id).first()
         if detalle_pedido:
             detalle_pedido.Cantidad = nueva_cantidad
             detalle_pedido.save()
@@ -68,8 +68,8 @@ class DetallePedidoViewSet(ViewSet):
 
     @action(methods=['get'], detail=True)
     def TotalProductosVendidos(self, request, pk=None):
-        detalles = DetallePedido.objects.filter(PedidoId=pk)
-        total = detalles.aggregate(sum('Cantidad'))['Cantidad__sum']
+        detalles = DetallePedido.objects.filter(id=pk)
+        total = detalles.aggregate(sum('cantidad'))['Cantidad__sum']
         return Response(status=status.HTTP_200_OK, data={'total_productos': total})
 
 
