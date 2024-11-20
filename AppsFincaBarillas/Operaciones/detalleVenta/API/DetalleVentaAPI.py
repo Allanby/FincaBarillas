@@ -20,76 +20,150 @@ class DetalleVentaViewSet(ViewSet):
     queryset = DetalleVenta.objects.all()
     serializer = DetalleVentaSerializer
 
+    # Listar todos los detalles de venta
     def list(self, request):
-        data = request
-        serializer = DetalleVentaSerializer(DetalleVenta.objects.all(), many=True)
-        return Response(status=status.HTTP_200_OK, data=serializer.data)
+        detalles_venta = DetalleVenta.objects.all()
+        serializer = DetalleVentaSerializer(detalles_venta, many=True)
+        return Response({
+            "success": True,
+            "status": status.HTTP_200_OK,
+            "message": "Listado de detalles de venta",
+            "record": serializer.data
+        }, status=status.HTTP_200_OK)
 
+    # Obtener un detalle de venta específico
     def retrieve(self, request, pk: int):
-        serializer = DetalleVentaSerializer(DetalleVenta.objects.get(pk=pk))
-        return Response(status=status.HTTP_200_OK, data=serializer.data)
+        try:
+            detalle_venta = DetalleVenta.objects.get(pk=pk)
+            serializer = DetalleVentaSerializer(detalle_venta)
+            return Response({
+                "success": True,
+                "status": status.HTTP_200_OK,
+                "message": "Detalle de venta encontrado",
+                "record": serializer.data
+            }, status=status.HTTP_200_OK)
+        except DetalleVenta.DoesNotExist:
+            return Response({
+                "success": False,
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Detalle de venta no encontrado",
+                "record": []
+            }, status=status.HTTP_404_NOT_FOUND)
 
+    # Crear un nuevo detalle de venta
     def create(self, request):
-        # Categoria.objects.create(Codigo=request.Post['Codigo'],Nombre=request.Post['Nombre'])
-        serializer = DetalleVentaSerializer(data=request.Post)
+        serializer = DetalleVentaSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(status=status.HTTP_200_OK, data=serializer.data)
+        return Response({
+            "success": True,
+            "status": status.HTTP_200_OK,
+            "message": "Detalle de venta creado exitosamente",
+            "record": serializer.data
+        }, status=status.HTTP_200_OK)
 
+    # Actualizar un detalle de venta existente
     def update(self, request, pk: int):
-        detalleVenta = DetalleVenta.objects.get(pk=pk)
-        serializer = DetalleVentaSerializer(instance=detalleVenta, data=request.data)
-        serializer.is_valid(raise_exception= True)
-        serializer.save()
-        return Response(status=status.HTTP_200_OK, data= serializer.data)
+        try:
+            detalle_venta = DetalleVenta.objects.get(pk=pk)
+            serializer = DetalleVentaSerializer(instance=detalle_venta, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({
+                "success": True,
+                "status": status.HTTP_200_OK,
+                "message": "Detalle de venta actualizado exitosamente",
+                "record": serializer.data
+            }, status=status.HTTP_200_OK)
+        except DetalleVenta.DoesNotExist:
+            return Response({
+                "success": False,
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Detalle de venta no encontrado",
+                "record": []
+            }, status=status.HTTP_404_NOT_FOUND)
 
-
+    # Eliminar un detalle de venta
     def delete(self, request, pk: int):
-        detalleVenta = DetalleVenta.objects.get(pk=pk)
-        serializer = DetalleVentaSerializer(detalleVenta)
-        detalleVenta.delete()
-        return Response(status= status.HTTP_204_NO_CONTENT)
+        try:
+            detalle_venta = DetalleVenta.objects.get(pk=pk)
+            detalle_venta.delete()
+            return Response({
+                "success": True,
+                "status": status.HTTP_204_NO_CONTENT,
+                "message": "Detalle de venta eliminado exitosamente",
+                "record": []
+            }, status=status.HTTP_204_NO_CONTENT)
+        except DetalleVenta.DoesNotExist:
+            return Response({
+                "success": False,
+                "status": status.HTTP_404_NOT_FOUND,
+                "message": "Detalle de venta no encontrado",
+                "record": []
+            }, status=status.HTTP_404_NOT_FOUND)
 
-    #Actualizar detalle venta
+    # Actualizar la cantidad y el precio de un detalle de venta
     @action(methods=['put'], detail=False)
     def ActualizarDetalleVenta(self, request):
         detalle_id = request.data.get('DetalleId')
         nueva_cantidad = request.data.get('Cantidad')
         nuevo_precio = request.data.get('PrecioProducto')
 
-        detalle_venta = DetalleVenta.objects.filter(id=detalle_id).first()
+        detalle_venta = DetalleVenta.objects.filter(Id_DetalleVenta=detalle_id).first()
         if detalle_venta:
             if nueva_cantidad is not None:
-                detalle_venta.cantidadProducto = nueva_cantidad
+                detalle_venta.cantidad_producto = nueva_cantidad
             if nuevo_precio is not None:
-                detalle_venta.PrecioProducto = nuevo_precio
+                detalle_venta.precio_producto = nuevo_precio
             detalle_venta.save()
-            return Response(status=status.HTTP_200_OK, data={'mensaje': 'Detalle de venta actualizado'})
-        return Response(status=status.HTTP_404_NOT_FOUND, data={'mensaje': 'Detalle de venta no encontrado'})
+            return Response({
+                "success": True,
+                "status": status.HTTP_200_OK,
+                "message": "Detalle de venta actualizado exitosamente"
+            }, status=status.HTTP_200_OK)
+        return Response({
+            "success": False,
+            "status": status.HTTP_404_NOT_FOUND,
+            "message": "Detalle de venta no encontrado"
+        }, status=status.HTTP_404_NOT_FOUND)
 
-    #Reporte de productos más vendidos:
+    # Reporte de productos más vendidos
     @action(methods=['get'], detail=False)
     def ReporteProductosMasVendidos(self, request):
-        productos_mas_vendidos = DetalleVenta.objects.values('ProductoID').annotate(
-            total_vendido=sum('cantidadProducto')).order_by('-total_vendido')
-        return Response(status=status.HTTP_200_OK, data={'reporte': productos_mas_vendidos})
+        productos_mas_vendidos = DetalleVenta.objects.values('producto__nombre').annotate(
+            total_vendido=models.Sum('cantidad_producto')
+        ).order_by('-total_vendido')
+        return Response({
+            "success": True,
+            "status": status.HTTP_200_OK,
+            "message": "Reporte de productos más vendidos",
+            "record": productos_mas_vendidos
+        }, status=status.HTTP_200_OK)
 
-    #Obtener total de productos vendidos en una venta específica:
-
+    # Obtener el total de productos vendidos en una venta específica
     @action(methods=['get'], detail=True)
     def TotalProductosVendidos(self, request, pk=None):
-        detalles = DetalleVenta.objects.filter(VentaI=pk)
-        total = detalles.aggregate(sum('cantidadProducto'))['cantidadProducto__sum']
-        return Response(status=status.HTTP_200_OK, data={'total_productos': total})
+        detalles = DetalleVenta.objects.filter(venta_id=pk)
+        total = detalles.aggregate(total_vendido=models.Sum('cantidad_producto'))['total_vendido']
+        return Response({
+            "success": True,
+            "status": status.HTTP_200_OK,
+            "message": "Total de productos vendidos",
+            "record": {'total_productos': total}
+        }, status=status.HTTP_200_OK)
 
-    #Filtrar detalles de venta por precio mínimo:
+    # Filtrar detalles de venta por precio mínimo
     @action(methods=['get'], detail=False)
     def FiltrarPorPrecioMinimo(self, request):
         precio_min = request.query_params.get('precio_min', 0)
-        detalles = DetalleVenta.objects.filter(PrecioProducto__gte=precio_min)
+        detalles = DetalleVenta.objects.filter(precio_producto__gte=precio_min)
         serializer = DetalleVentaSerializer(detalles, many=True)
-        return Response(status=status.HTTP_200_OK, data={'resultado': serializer.data})
-
+        return Response({
+            "success": True,
+            "status": status.HTTP_200_OK,
+            "message": "Detalles de venta filtrados por precio mínimo",
+            "record": serializer.data
+        }, status=status.HTTP_200_OK)
 
 
 
